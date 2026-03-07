@@ -1,3 +1,3 @@
-# Custom Vector-Quantizated Variational Autoencoders (VQ-VAE)
+# Custom Vector-Quantizated Variational Autoencoder (VQ-VAE)
 
 ![alt text](result.png)
