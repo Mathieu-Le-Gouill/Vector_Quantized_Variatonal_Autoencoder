@@ -1,4 +1,5 @@
 
+import math
 from typing import List
 import torch.nn.functional as F
 import torch
@@ -37,16 +38,16 @@ class AE(nn.Module):
         in_channels = in_shape[0]
 
         # --- Encoder ---
-        self.encoder = Encoder(in_channels, hidden_dims, kernel_size, stride, padding)
+        self.enc_layer = Encoder(in_channels, hidden_dims, kernel_size, stride, padding)
 
         enc_flat_dim = self._compute_latent_shape(in_shape)
 
-        self.fc_enc = nn.Linear(enc_flat_dim, latent_dim)
+        self.enc_fc = nn.Linear(enc_flat_dim, latent_dim)
 
         # --- Decoder ---
-        self.fc_dec = nn.Linear(latent_dim, enc_flat_dim)
+        self.dec_fc = nn.Linear(latent_dim, enc_flat_dim)
 
-        self.decoder = Decoder(in_channels, hidden_dims, kernel_size, stride, padding, output_padding)
+        self.dec_layer = Decoder(in_channels, hidden_dims, kernel_size, stride, padding, output_padding)
         
 
     def encode(self, x: Tensor) -> Tensor:
@@ -57,9 +58,9 @@ class AE(nn.Module):
         Returns:
             latent tensor of shape (B, L)
         """
-        enc = self.encoder(x) # (B, C, H, W, ...)
+        enc = self.enc_layer(x) # (B, C, H, W, ...)
         enc_flat = torch.flatten(enc, start_dim=1) # (B, L)
-        z = self.fc_enc(enc_flat)
+        z = self.enc_fc(enc_flat)
     
         return z
     
@@ -72,9 +73,9 @@ class AE(nn.Module):
         Returns:
             reconstructed tensor of shape (B, C, H, W, ...)
         """
-        dec_flat = self.fc_dec(x) # (B, L)
+        dec_flat = self.dec_fc(x) # (B, L)
         dec = dec_flat.view(-1, *self.enc_shape)  # (B, C, H, W, ...)
-        recon = self.decoder(dec)
+        recon = self.dec_layer(dec)
 
         return recon
 
@@ -103,6 +104,18 @@ class AE(nn.Module):
 
         return F.mse_loss(recon, x)
     
+
+    def generate(self, x: Tensor) -> Tensor:
+        """
+        Given an input x, returns the reconstructed x as recon
+        Args:                
+            x: input tensor of shape (B, C, H, W, ...)
+        Returns:                
+            reconstructed tensor of shape (B, C, H, W, ...)
+        """
+
+        return self.forward(x)
+    
     
     def _extract_conv_params(self, conv_params):
         """
@@ -129,13 +142,13 @@ class AE(nn.Module):
         Returns:
             enc_flat_dim: int, flattened size per sample
         """
-        assert self.encoder is not None
+        assert self.enc_layer is not None
 
         with torch.no_grad():
             dummy_input = torch.zeros(1, *in_shape)
-            enc = self.encoder(dummy_input) # (1, C, H, W,...)
+            enc = self.enc_layer(dummy_input) # (1, C, H, W,...)
             self.enc_shape = enc.shape[1:] # (C, H, W,...)
-            enc_flat_dim = int(torch.prod(torch.tensor(self.enc_shape)))  #(C * H * W * ...)
+            enc_flat_dim = math.prod(self.enc_shape)  #(C * H * W * ...)
 
         return enc_flat_dim
 

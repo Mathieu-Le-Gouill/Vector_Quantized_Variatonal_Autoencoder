@@ -1,7 +1,8 @@
 import torch
 
-def train(models, epochs, optimizers, train_loader, test_loader, device):
-    for model, optimizer in zip(models, optimizers):
+def train(models, models_names, epochs, optimizers, train_loader, test_loader, device):
+    for model, optimizer, model_name in zip(models, optimizers, models_names):
+        print(f"Model - {model_name}:")
         for epoch in range(epochs):
             model.train()
             running_loss = 0.0
@@ -15,8 +16,7 @@ def train(models, epochs, optimizers, train_loader, test_loader, device):
 
                 running_loss += loss.item() * imgs.size(0)
 
-            epoch_loss = running_loss / len(train_loader.dataset)
-            print(f"Epoch [{epoch+1}/{epochs}] - Train Loss: {epoch_loss:.4f}")
+            train_loss = running_loss / len(train_loader.dataset)
 
             # --- Evaluation ---
             model.eval()
@@ -28,5 +28,6 @@ def train(models, epochs, optimizers, train_loader, test_loader, device):
                     loss = model.compute_loss(imgs)
                     total_loss += loss.item() * imgs.size(0)
 
-            avg_loss = total_loss / len(test_loader.dataset)
-            print(f"Test reconstruction loss: {avg_loss:.4f}")
+            test_loss = total_loss / len(test_loader.dataset)
+            print(f"Epoch [{epoch+1}/{epochs}] | Train Loss: {train_loss:.4f} | Test Loss: {test_loss:.4f}")
+        print("\n")

@@ -5,6 +5,7 @@ import torch
 from torch import Tensor, nn
 from models.components.encoder import Encoder
 from models.components.decoder import Decoder
+import math
 
 
 class VAE(nn.Module):
@@ -36,17 +37,17 @@ class VAE(nn.Module):
         in_channels = in_shape[0]
 
         # --- Encoder ---
-        self.encoder = Encoder(in_channels, hidden_dims, kernel_size, stride, padding)
+        self.enc_layer = Encoder(in_channels, hidden_dims, kernel_size, stride, padding)
 
         enc_flat_dim = self._compute_latent_shape(in_shape)
 
-        self.fc_mu = nn.Linear(enc_flat_dim, latent_dim)
-        self.fc_logvar = nn.Linear(enc_flat_dim, latent_dim)
+        self.mu_fc = nn.Linear(enc_flat_dim, latent_dim)
+        self.logvar_fc = nn.Linear(enc_flat_dim, latent_dim)
 
         # --- Decoder ---
-        self.fc_dec = nn.Linear(latent_dim, enc_flat_dim)
+        self.dec_fc = nn.Linear(latent_dim, enc_flat_dim)
 
-        self.decoder = Decoder(in_channels, hidden_dims, kernel_size, stride, padding, output_padding)
+        self.dec_layer = Decoder(in_channels, hidden_dims, kernel_size, stride, padding, output_padding)
 
 
     def encode(self, x: Tensor) -> Tensor:
@@ -57,7 +58,7 @@ class VAE(nn.Module):
         Returns:
             sampled tensor of shape (B, L), mean tensor of shape (B, L), log variance tensor of shape (B, L)
         """
-        enc = self.encoder(x) # (B, C, H, W, ...)
+        enc = self.enc_layer(x) # (B, C, H, W, ...)
         enc_flat = torch.flatten(enc, start_dim=1) # (B, latent_dim)
 
         z, mu, log_var = self._bottleneck(enc_flat)
@@ -73,8 +74,8 @@ class VAE(nn.Module):
         Returns:
             sampled tensor of shape (B, L), mean tensor of shape (B, L), log variance tensor of shape (B, L)
         """
-        mu = self.fc_mu(x)
-        log_var = self.fc_logvar(x) # log(std**2)
+        mu = self.mu_fc(x)
+        log_var = self.logvar_fc(x) # log(std**2)
 
         std = torch.exp(0.5 * log_var) # sqrt(exp(log_var))
         epsilon = torch.randn_like(std, device=std.device) # reparameterization trick
@@ -92,9 +93,9 @@ class VAE(nn.Module):
         Returns:
             reconstructed tensor of shape (B, C, H, W, ...)
         """
-        dec_flat = self.fc_dec(x)# (B, latent_dim)
+        dec_flat = self.dec_fc(x)# (B, latent_dim)
         dec = dec_flat.view(-1, *self.enc_shape)  # (B, C, H, W, ...)
-        recon = self.decoder(dec)
+        recon = self.dec_layer(dec)
 
         return recon
 
@@ -104,7 +105,7 @@ class VAE(nn.Module):
         Args:                
             x: input tensor of shape (B, C, H, W, ...)
         Returns:                
-            reconstructed tensor of shape (B, C, H, W, ...)
+            reconstructed tensor of shape (B, C, H, W, ...), mean tensor of shape (B, L), log variance tensor of shape (B, L)
         """
         z, mu, log_var = self.encode(x)
         recon = self.decode(z)
@@ -128,6 +129,19 @@ class VAE(nn.Module):
         recon_loss = F.mse_loss(recon, x, reduction='sum') / batch_size
 
         return recon_loss + kl_loss
+    
+    
+    def generate(self, x: Tensor) -> Tensor:
+        """
+        Given an input x, returns the reconstructed x as recon
+        Args:                
+            x: input tensor of shape (B, C, H, W, ...)
+        Returns:                
+            reconstructed tensor of shape (B, C, H, W, ...)
+        """
+        recon, _, _ = self.forward(x)
+
+        return recon
     
     
     def _extract_conv_params(self, conv_params):
@@ -155,13 +169,13 @@ class VAE(nn.Module):
         Returns:
             enc_flat_dim: int, flattened size per sample
         """
-        assert self.encoder is not None
+        assert self.enc_layer is not None
 
         with torch.no_grad():
             dummy_input = torch.zeros(1, *in_shape)
-            enc = self.encoder(dummy_input) # (1, C, H, W,...)
+            enc = self.enc_layer(dummy_input) # (1, C, H, W,...)
             self.enc_shape = enc.shape[1:] # (C, H, W,...)
-            enc_flat_dim = int(torch.prod(torch.tensor(self.enc_shape)))  #(C * H * W * ...)
+            enc_flat_dim = math.prod(self.enc_shape)  #(C * H * W * ...)
 
         return enc_flat_dim
 

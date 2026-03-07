@@ -12,12 +12,7 @@ def visualize_recon(models, models_names, test_loader, device, n=8):
 
             for model in models:
                 model.eval()
-                outputs = model(imgs)
-
-                if isinstance(outputs, tuple):
-                    recon = outputs[0]
-                else:
-                    recon = outputs
+                recon = model.generate(imgs)
 
                 model_outputs.append(recon.cpu())
 

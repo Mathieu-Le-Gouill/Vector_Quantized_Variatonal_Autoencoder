@@ -40,7 +40,7 @@ class Decoder(nn.Module):
             nn.Tanh()
         )
 
-        self.decoder = nn.Sequential(
+        self.dec_layer = nn.Sequential(
             *dec_layers, 
             *self.final_layer
         )
@@ -53,6 +53,6 @@ class Decoder(nn.Module):
         Returns:
             reconstructed tensor of shape (B, C, H, W, ...)
         """
-        dec = self.decoder(x)
+        dec = self.dec_layer(x)
 
         return dec

@@ -32,7 +32,7 @@ class Encoder(nn.Module):
             )
             in_ch = h_dim
         
-        self.encoder = nn.Sequential(*enc_layers)
+        self.enc_layer = nn.Sequential(*enc_layers)
 
     def forward(self, x):
         """
@@ -42,7 +42,7 @@ class Encoder(nn.Module):
         Returns:
             latent tensor of shape (B, L)
         """
-        enc = self.encoder(x)
+        enc = self.enc_layer(x)
 
         return enc
         

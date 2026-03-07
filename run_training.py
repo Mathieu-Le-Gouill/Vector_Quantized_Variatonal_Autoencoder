@@ -6,6 +6,7 @@ from torchvision import datasets, transforms
 from models.auto_encoder import AE
 from models.beta_vae import BetaVAE
 from models.vae import VAE
+from models.vq_vae import VQVAE
 from utils.train_model import train
 from utils.visualize_recon import visualize_recon
 
@@ -66,17 +67,33 @@ if __name__ == "__main__":
         }
     ).to(device)
 
-    models = [modelAE, modelVAE, modelBetaVAE]
-    models_names = ["AE", "VAE", "BetaVAE"]
+    modelVQVAE = VQVAE(
+        latent_dim=128,
+        voc_size=512,
+        beta=0.3,
+        hidden_dims=[128, 256],
+        in_shape=[1, 28, 28],
+        conv_params = {
+        "kernel_size": 3,
+        "stride": 2,
+        "padding": 1,
+        "output_padding": 1,
+        }
+    ).to(device)
+
+    models = [modelAE, modelVAE, modelBetaVAE, modelVQVAE]
+    models_names = ["AE", "VAE", "Beta-VAE", "VQ-VAE"]
 
     # --- Prepare Optimizers ---
     optimizerAE = optim.Adam(modelAE.parameters(), lr=lr)
     optimizerVAE = optim.Adam(modelVAE.parameters(), lr=lr)
     optimizerBetaVAE = optim.Adam(modelBetaVAE.parameters(), lr=lr)
-    optimizers = [optimizerAE, optimizerVAE, optimizerBetaVAE]
+    optimizerVQAE = optim.Adam(modelVQVAE.parameters(), lr=lr)
+
+    optimizers = [optimizerAE, optimizerVAE, optimizerBetaVAE, optimizerVQAE]
 
     # --- Train ---
-    train(models, epochs, optimizers, train_loader, test_loader, device)
+    train(models, models_names, epochs, optimizers, train_loader, test_loader, device)
 
     #-- Visualize Reconstructions ---
     visualize_recon(models, models_names, test_loader, device)
