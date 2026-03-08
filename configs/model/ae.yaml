@@ -1,0 +1,12 @@
+type: AE
+
+latent_dim : 128
+hidden_dims : [128, 256]
+in_shape : [1, 28, 28]
+
+conv_params : {
+    "kernel_size": 3,
+    "stride": 2,
+    "padding": 1,
+    "output_padding": 1,
+}

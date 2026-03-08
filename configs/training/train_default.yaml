@@ -1,0 +1,9 @@
+epochs: 5
+batch_size: 128
+
+optimizer:
+  name: adam
+  lr: 1e-3
+  weight_decay: 0.0
+
+device: auto
