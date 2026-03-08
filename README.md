@@ -73,7 +73,7 @@ All parameters are configurable via Hydra in the **`config/`** directory:
 python train.py model=vae training.epochs=10 training.optimizer.lr=1e-3 visualization.n_samples=16
 ```
 
-## Outputs
+## Outputs
 
 Hydra automatically creates per-run output directories:
 
