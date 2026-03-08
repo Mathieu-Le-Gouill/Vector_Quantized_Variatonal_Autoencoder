@@ -3,11 +3,22 @@
 A Python project implementing various autoencoder models including:
 
 - **AE** (Autoencoder)  
-- **VAE** (Variational Autoencoder)  
-- **Beta-VAE** (VAE with β regularization)  
-- **VQ-VAE** (Vector-Quantized VAE)
+  - Standard autoencoder: learns a compressed latent representation of the input.  
+  - The latent space has **no explicit distribution constraints**, so it captures features purely for reconstruction.
 
-Training with the **MNIST dataset** .
+- **VAE** (Variational Autoencoder)  
+  - The latent space is **regularized to follow a standard normal distribution** $\mathcal{N}(0, 1) $.
+  - This allows smooth interpolation in the latent space and generative sampling.
+
+- **Beta-VAE** (VAE with β regularization)  
+  - Extends the VAE by introducing a **β weight on the KL divergence** term.  
+  - Encourages **disentangled latent representations**, making each latent dimension capture independent factors of variation.
+
+- **VQ-VAE** (Vector-Quantized VAE)  
+  - The latent space is **discrete**, mapped to a finite set of embedding vectors.  
+  - Useful for **discrete representation learning**, compression, and tasks like generative modeling with autoregressive priors.
+
+### Training over the **MNIST dataset** :
 
 ![Reconstruction Example](result.png)
 
