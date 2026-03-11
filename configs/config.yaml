@@ -1,4 +1,5 @@
 defaults:
+  - _self_
   - model: ae # ae, beta_vae, vae, vq_vae
   - training: train_default
   - evaluation: eval_default
